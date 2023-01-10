@@ -1,0 +1,60 @@
+---
+
+- hosts: all
+  become: yes
+  tasks:
+
+  - name: Update & Upgrade my Instances
+    apt:
+      update_cache: yes
+      upgrade: yes
+
+  - name: Install NGINX
+    apt:
+      name: nginx
+      state: latest
+
+  - name: Add php8 repository
+    apt_repository:
+      validate_certs: no
+      repo: 'ppa:ondrej/php'
+      state: present
+      update_cache: yes
+      codename: trusty
+
+  - name: Install PHP
+    apt:
+      name: php8.1-fpm
+      state: latest
+
+  - name: Remove NGINX
+    file:
+      path: /var/www/html/index.nginx-debian.html
+      state: absent
+
+  - name: Remove Default NGINX file
+    file:
+      path: /etc/nginx/sites-available/default
+      state: absent
+
+  - name: Copy Default NGINX file to Instance
+    copy:
+      src: default
+      dest: /etc/nginx/sites-available
+      owner: root
+      group: root
+      mode: 0744
+
+  - name: Copy PHP file to print hostname to Instance
+    copy:
+      src: index.php
+      dest: /var/www/html
+      owner: root
+      group: root
+      mode: 0744
+
+  - name: Restart NGINX
+    service:
+      name: nginx
+      state: restarted
+      enabled: yes
